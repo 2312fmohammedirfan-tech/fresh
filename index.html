@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FreshFruits — Premium Organic Fruits Delivered</title>
+  <meta name="description" content="Order fresh, hand-picked organic fruits from local farms. Fast delivery, freshness guarantee, and smart AI nutrition recommendations." />
+  <meta name="keywords" content="organic fruits, buy fruits online, fresh fruits delivery, healthy eating, AI fruit recommendations" />
+  <meta property="og:title" content="S-M Fruits - Premium Organic Fruits Delivered" />
+  <meta property="og:description" content="Order fresh, hand-picked organic fruits from local farms." />
+  <meta property="og:image" content="/assets/logo.png" />
+  <meta property="og:type" content="website" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="S-M Fruits - Premium Organic Fruits Delivered" />
+  <meta name="twitter:description" content="Order fresh, hand-picked organic fruits from local farms." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Playfair+Display:wght@700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="index.css">
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+  <!-- jsPDF & AutoTable -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+  
+  <!-- Razorpay SDK -->
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+</head>
+<body>
+
+  <!-- ===== NAVBAR ===== -->
+  <nav id="navbar">
+    <div class="nav-container">
+      <a href="#" class="logo" onclick="app.showView('home')">
+        <span class="logo-icon">🍎</span>
+        <span class="logo-text">Fresh<span class="logo-accent">Fruits</span></span>
+      </a>
+      <div class="nav-links" id="nav-links">
+        <a href="#" class="nav-link active" data-view="home" onclick="app.navTo('home',this)">Home</a>
+        <a href="#" class="nav-link" data-view="products" onclick="app.navTo('products',this)">Shop</a>
+        <a href="#" class="nav-link" data-view="recommend" onclick="app.navTo('recommend',this)">AI Picker</a>
+        <a href="#" class="nav-link" data-view="subscriptions" onclick="app.navTo('subscriptions',this)">Subscribe</a>
+        <a href="#" class="nav-link" data-view="about" onclick="app.navTo('about',this)">About</a>
+      </div>
+      <div class="nav-actions">
+        <button id="search-btn" class="icon-btn" title="Search" onclick="app.toggleSearch()">🔍</button>
+        <button id="mic-btn" class="icon-btn" title="Voice Search" onclick="app.startVoice()">🎙️</button>
+        <button id="cart-toggle" class="cart-btn" onclick="app.toggleCart()">
+          🛒 <span id="cart-count" class="cart-badge">0</span>
+        </button>
+        <div id="auth-links">
+          <button class="btn-outline" onclick="window.location.href='/login.html'">Login</button>
+          <button class="btn-primary" onclick="window.location.href='/login.html'">Sign Up</button>
+        </div>
+        <div id="user-profile" class="hidden">
+          <div class="user-avatar" onclick="app.showView('profile')" id="user-avatar-btn">U</div>
+          <button class="btn-ghost" onclick="app.showView('profile')">My Account</button>
+          <button id="admin-panel-btn" class="btn-secondary hidden" onclick="app.showView('admin')">Admin</button>
+          <button id="logout-btn" class="icon-btn" title="Logout" onclick="app.logout()">🚪</button>
+        </div>
+        <button class="hamburger" id="hamburger" onclick="app.toggleMenu()">☰</button>
+      </div>
+    </div>
+    <!-- Search Bar -->
+    <div id="search-bar" class="search-bar hidden">
+      <div class="search-inner">
+        <input type="text" id="search-input" placeholder="Search for fruits... (e.g. mango, berries)" oninput="app.liveSearch(this.value)" />
+        <button onclick="app.closeSearch()">✕</button>
+      </div>
+      <div id="search-results" class="search-results"></div>
+    </div>
+  </nav>
+
+  <!-- ===== CART SIDEBAR ===== -->
+  <div id="cart-sidebar" class="sidebar">
+    <div class="sidebar-header">
+      <h2>🛒 Your Cart</h2>
+      <button class="icon-btn" onclick="app.toggleCart()">✕</button>
+    </div>
+    <div id="cart-content" class="cart-content"></div>
+    <div class="cart-footer">
+      <div class="cart-total" style="display:flex;justify-content:space-between;align-items:center">
+        <div><span>Total: </span><strong id="cart-total" style="font-size:1.2rem;color:var(--primary)">₹0</strong></div>
+        <button class="btn-ghost btn-sm" onclick="app.clearCart()" style="color:var(--danger);padding:0.3rem 0.6rem;font-size:0.8rem">🗑️ Clear All</button>
+      </div>
+      <button class="btn-primary btn-block" onclick="app.checkout()">Proceed to Checkout →</button>
+      <button class="btn-ghost btn-block" onclick="app.toggleCart()">Continue Shopping</button>
+    </div>
+  </div>
+  <div id="overlay" class="overlay hidden" onclick="app.closeAll()"></div>
+
+  <!-- ===== MAIN APP ===== -->
+  <main id="app">
+
+    <!-- ========== HOME VIEW ========== -->
+    <section id="home-view" class="view">
+
+      <!-- Hero -->
+      <div class="hero">
+        <div class="hero-bg">
+          <img src="images/hero_banner.png" alt="Fresh fruits" class="hero-img" />
+          <div class="hero-overlay"></div>
+        </div>
+        <div class="hero-content">
+          <div class="hero-badge reveal">🌿 100% Organic &amp; Farm Fresh</div>
+          <h1 class="hero-title reveal">Premium <span class="accent">Fresh Fruits</span><br>Delivered to Your Door</h1>
+          <p class="hero-sub reveal">Hand-picked from 50+ local farms. Freshness guaranteed or your money back.</p>
+          <div class="hero-stats reveal">
+            <div class="stat"><span class="stat-num">50+</span><span class="stat-label">Partner Farms</span></div>
+            <div class="stat-divider"></div>
+            <div class="stat"><span class="stat-num">20K+</span><span class="stat-label">Happy Customers</span></div>
+            <div class="stat-divider"></div>
+            <div class="stat"><span class="stat-num">4.9★</span><span class="stat-label">Rating</span></div>
+          </div>
+          <div class="hero-actions reveal">
+            <button class="btn-primary btn-lg" onclick="app.showView('products')">Shop Now →</button>
+            <button class="btn-ghost btn-lg" onclick="app.showView('recommend')">🤖 AI Fruit Picker</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Category Chips -->
+      <div class="container">
+        <div class="category-scroll">
+          <button class="cat-chip active" onclick="app.filterCategory('all',this)">🍽️ All</button>
+          <button class="cat-chip" onclick="app.filterCategory('tropical',this)">🌴 Tropical</button>
+          <button class="cat-chip" onclick="app.filterCategory('berries',this)">🍓 Berries</button>
+          <button class="cat-chip" onclick="app.filterCategory('seasonal',this)">🍂 Seasonal</button>
+          <button class="cat-chip" onclick="app.filterCategory('citrus',this)">🍋 Citrus</button>
+          <button class="cat-chip organic-chip" onclick="app.filterOrganic(this)">🌿 Organic Only</button>
+        </div>
+      </div>
+
+      <!-- AI Daily Pick -->
+      <div class="container section reveal">
+        <div class="section-header">
+          <div>
+            <span class="section-tag">🤖 AI Powered</span>
+            <h2 class="section-title">Today's AI Daily Pick</h2>
+            <p class="section-sub">Our algorithm's top recommendation based on peak freshness &amp; nutrition.</p>
+          </div>
+        </div>
+        <div id="daily-pick-box"></div>
+      </div>
+
+      <!-- Bestsellers -->
+      <div class="container section reveal">
+        <div class="section-header">
+          <div>
+            <span class="section-tag">🔥 Trending</span>
+            <h2 class="section-title">Bestsellers</h2>
+            <p class="section-sub">Loved by 20,000+ customers.</p>
+          </div>
+          <button class="btn-ghost" onclick="app.showView('products')">View All →</button>
+        </div>
+        <div class="product-grid" id="best-sellers-grid"></div>
+      </div>
+
+      <!-- Why Choose Us -->
+      <div class="container section reveal">
+        <div class="section-header centered">
+          <span class="section-tag">💚 Our Promise</span>
+          <h2 class="section-title">Why Choose FreshFruits?</h2>
+        </div>
+        <div class="features-grid">
+          <div class="feature-card glass-card">
+            <div class="feature-icon">🌱</div>
+            <h3>Farm to Table</h3>
+            <p>Directly sourced from 50+ verified local organic farms. No middlemen, maximum freshness.</p>
+          </div>
+          <div class="feature-card glass-card">
+            <div class="feature-icon">⚡</div>
+            <h3>Same Day Delivery</h3>
+            <p>Order before 10 AM and get your fruits delivered to your doorstep by evening.</p>
+          </div>
+          <div class="feature-card glass-card">
+            <div class="feature-icon">🌟</div>
+            <h3>Freshness Guarantee</h3>
+            <p>Live freshness scores (1–100) on every product. Not fresh? Full refund, no questions.</p>
+          </div>
+          <div class="feature-card glass-card">
+            <div class="feature-icon">🤖</div>
+            <h3>Smart AI Nutrition</h3>
+            <p>AI-powered recommendations tailored to your health goals, season, and body type.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Testimonials -->
+      <div class="container section reveal">
+        <div class="section-header centered">
+          <span class="section-tag">❤️ Reviews</span>
+          <h2 class="section-title">What Our Customers Say</h2>
+        </div>
+        <div class="testimonials-grid" id="testimonials-grid"></div>
+      </div>
+
+      <!-- Newsletter -->
+      <div class="container section reveal">
+        <div class="newsletter-box glass-card">
+          <div class="newsletter-content">
+            <span class="section-tag">📬 Newsletter</span>
+            <h2>Get 10% Off Your First Order</h2>
+            <p>Subscribe to get weekly fresh picks, seasonal deals, and nutrition tips.</p>
+            <div class="newsletter-form">
+              <input type="email" id="newsletter-email" placeholder="Enter your email address..." />
+              <button class="btn-primary" onclick="app.subscribe()">Subscribe →</button>
+            </div>
+          </div>
+          <div class="newsletter-emoji">🍊🥝🍇🍓🍍</div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ========== PRODUCTS VIEW ========== -->
+    <section id="products-view" class="view hidden">
+      <div class="page-hero">
+        <h1>Our Fresh <span class="accent">Fruit Collection</span></h1>
+        <p>Hand-picked, certified organic, delivered fresh.</p>
+      </div>
+      <div class="container">
+        <div class="products-toolbar">
+          <div class="filter-group">
+            <button class="filter-chip active" data-cat="all" onclick="app.filterProducts('all',this)">All</button>
+            <button class="filter-chip" data-cat="tropical" onclick="app.filterProducts('tropical',this)">🌴 Tropical</button>
+            <button class="filter-chip" data-cat="berries" onclick="app.filterProducts('berries',this)">🍓 Berries</button>
+            <button class="filter-chip" data-cat="seasonal" onclick="app.filterProducts('seasonal',this)">🍂 Seasonal</button>
+            <button class="filter-chip" data-cat="citrus" onclick="app.filterProducts('citrus',this)">🍋 Citrus</button>
+          </div>
+          <div class="sort-group">
+            <label>Sort:</label>
+            <select id="sort-select" onchange="app.sortProducts(this.value)">
+              <option value="default">Featured</option>
+              <option value="price-asc">Price: Low to High</option>
+              <option value="price-desc">Price: High to Low</option>
+              <option value="freshness">Freshness</option>
+              <option value="rating">Rating</option>
+            </select>
+          </div>
+        </div>
+        <div class="product-grid" id="products-grid"></div>
+      </div>
+    </section>
+
+    <!-- ========== AI RECOMMEND VIEW ========== -->
+    <section id="recommend-view" class="view hidden">
+      <div class="page-hero">
+        <h1>AI <span class="accent">Fruit Picker</span></h1>
+        <p>Tell us about your health goals — we'll pick the perfect fruits for you.</p>
+      </div>
+      <div class="container">
+        <div class="recommend-card glass-card">
+          <h3>🤖 Smart Nutrition Advisor</h3>
+          <div class="form-row">
+            <div class="form-group">
+              <label>What's your health goal?</label>
+              <select id="rec-goal">
+                <option value="">Select a goal</option>
+                <option value="immunity">🛡️ Boost Immunity</option>
+                <option value="energy">⚡ More Energy</option>
+                <option value="digestion">🌿 Better Digestion</option>
+                <option value="weightloss">⚖️ Weight Loss</option>
+                <option value="skin">✨ Glowing Skin</option>
+                <option value="heart">❤️ Heart Health</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Preferred taste?</label>
+              <select id="rec-taste">
+                <option value="">Any taste</option>
+                <option value="sweet">🍬 Sweet</option>
+                <option value="tangy">🍋 Tangy/Citrus</option>
+                <option value="mild">🌿 Mild</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Any allergies or restrictions?</label>
+            <div class="checkbox-group">
+              <label><input type="checkbox" value="no-citrus" /> No Citrus</label>
+              <label><input type="checkbox" value="no-tropical" /> No Tropical</label>
+              <label><input type="checkbox" value="organic-only" /> Organic Only</label>
+            </div>
+          </div>
+          <button class="btn-primary btn-lg" onclick="app.getRecommendations()">🤖 Get My Recommendations</button>
+        </div>
+        <div id="recommendations-grid" class="product-grid" style="margin-top:2rem"></div>
+      </div>
+    </section>
+
+    <!-- ========== SUBSCRIPTIONS VIEW ========== -->
+    <section id="subscriptions-view" class="view hidden">
+      <div class="page-hero">
+        <h1>Fresh Fruit <span class="accent">Subscription</span></h1>
+        <p>Never run out of fresh fruits. Curated boxes delivered on your schedule.</p>
+      </div>
+      <div class="container">
+        <div class="subscription-grid" id="subscription-grid"></div>
+      </div>
+    </section>
+
+    <!-- ========== ABOUT VIEW ========== -->
+    <section id="about-view" class="view hidden">
+      <div class="page-hero">
+        <h1>About <span class="accent">FreshFruits</span></h1>
+        <p>We believe everyone deserves access to fresh, pure, farm-sourced nutrition.</p>
+      </div>
+      <div class="container">
+        <div class="about-story glass-card">
+          <div class="about-text">
+            <h2>Our Story</h2>
+            <p>FreshFruits was founded in 2020 with a simple mission: to connect city dwellers with the freshest produce straight from local farms. We partner with over 50 verified organic farms across India, ensuring every fruit on our platform meets our strict freshness and purity standards.</p>
+            <p style="margin-top:1rem">Our AI-powered system monitors freshness in real-time, so you always get fruits at their nutritional peak. We believe that good health starts with good food — and good food starts at the farm.</p>
+          </div>
+          <div class="about-img-box">
+            <div class="about-emoji-grid">
+              <span>🌾</span><span>🧺</span><span>🚚</span><span>🏠</span>
+            </div>
+            <p class="about-flow">Farm → Quality Check → Pack → Your Door</p>
+          </div>
+        </div>
+        <div class="features-grid" style="margin-top:2rem">
+          <div class="feature-card glass-card">
+            <div class="feature-icon">🏆</div>
+            <h3>Award Winning</h3>
+            <p>Best Agri-Tech Startup 2024 — Food &amp; Agri Summit</p>
+          </div>
+          <div class="feature-card glass-card">
+            <div class="feature-icon">🌍</div>
+            <h3>Eco Friendly</h3>
+            <p>100% biodegradable packaging. Zero single-use plastics.</p>
+          </div>
+          <div class="feature-card glass-card">
+            <div class="feature-icon">👨‍🌾</div>
+            <h3>Farmer First</h3>
+            <p>We pay farmers 30% more than market rate — always.</p>
+          </div>
+          <div class="feature-card glass-card">
+            <div class="feature-icon">🔬</div>
+            <h3>Lab Certified</h3>
+            <p>Every batch tested for pesticide residue and quality.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== PROFILE VIEW ========== -->
+    <section id="profile-view" class="view hidden">
+      <div class="page-hero">
+        <h1>My <span class="accent">Account</span></h1>
+      </div>
+      <div class="container">
+        <div class="profile-tabs">
+          <button class="tab-btn active" onclick="app.switchTab('orders',this)">📦 My Orders</button>
+          <button class="tab-btn" onclick="app.switchTab('settings',this)">⚙️ Settings</button>
+          <button class="tab-btn" onclick="app.switchTab('wishlist',this)">❤️ Wishlist</button>
+        </div>
+        <div id="tab-orders" class="tab-content">
+          <div id="orders-list"></div>
+        </div>
+        <div id="tab-settings" class="tab-content hidden">
+          <div class="glass-card" style="padding:2rem;max-width:600px">
+            <h3 style="margin-bottom:1.5rem">Profile Settings</h3>
+            <div class="form-group"><label>Full Name</label><input type="text" id="pf-name" placeholder="Your name" /></div>
+            <div class="form-group"><label>Email</label><input type="email" id="pf-email" placeholder="your@email.com" /></div>
+            <div class="form-group"><label>Phone</label><input type="tel" id="pf-phone" placeholder="+91 9999 999999" /></div>
+            <div class="form-group"><label>Delivery Address</label><input type="text" id="pf-addr" placeholder="Your full address" /></div>
+            <button class="btn-primary" onclick="app.saveProfile()">Save Changes</button>
+          </div>
+        </div>
+        <div id="tab-wishlist" class="tab-content hidden">
+          <div class="product-grid" id="wishlist-grid"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== ADMIN VIEW ========== -->
+    <section id="admin-view" class="view hidden">
+      <div class="page-hero">
+        <h1>🛠️ Admin <span class="accent">Dashboard</span></h1>
+        <p>KPIs count from <strong>0 → target</strong> each day · resets every 24 hours at midnight</p>
+        <div class="kpi-refresh-bar">
+          <span id="kpi-last-updated">Initializing...</span>
+          <span id="kpi-countdown" class="kpi-countdown"></span>
+          <button class="btn-ghost btn-sm" onclick="app.refreshKPIs(true)">🔄 Refresh</button>
+          <button class="btn-ghost btn-sm" onclick="app.exportDashboardPDF()">📊 Export PDF</button>
+          <span class="live-dot"></span><span style="color:var(--primary);font-size:0.85rem;font-weight:600">LIVE</span>
+        </div>
+      </div>
+      <div class="container admin-dashboard">
+        <div class="kpi-grid">
+          <div class="kpi-card glass-card"><div class="kpi-icon">💰</div><div class="kpi-info"><h3 id="kpi-revenue">₹0</h3><p>Total Revenue</p><small id="kpi-revenue-delta" class="kpi-delta"></small></div></div>
+          <div class="kpi-card glass-card"><div class="kpi-icon">📦</div><div class="kpi-info"><h3 id="kpi-orders">0</h3><p>Total Orders</p><small id="kpi-orders-delta" class="kpi-delta"></small></div></div>
+          <div class="kpi-card glass-card"><div class="kpi-icon">👥</div><div class="kpi-info"><h3 id="kpi-users">0</h3><p>Registered Users</p><small id="kpi-users-delta" class="kpi-delta"></small></div></div>
+          <div class="kpi-card glass-card"><div class="kpi-icon">🌟</div><div class="kpi-info"><h3 id="kpi-rating">0.0</h3><p>Avg Rating</p><small class="kpi-delta" style="color:var(--secondary)">★★★★★</small></div></div>
+          <div class="kpi-card glass-card"><div class="kpi-icon">🍎</div><div class="kpi-info"><h3 id="kpi-products">0</h3><p>Total Products</p></div></div>
+          <div class="kpi-card glass-card"><div class="kpi-icon">🧾</div><div class="kpi-info"><h3 id="kpi-bills">0</h3><p>Bills Generated</p></div></div>
+        </div>
+
+        <!-- Progress bar for 24h cycle -->
+        <div class="day-progress-wrap glass-card">
+          <div class="day-progress-header">
+            <span>📅 Today's Progress</span>
+            <span id="day-progress-pct">0%</span>
+          </div>
+          <div class="day-progress-track"><div id="day-progress-fill" class="day-progress-fill"></div></div>
+          <div class="day-progress-labels"><span>00:00</span><span>Midnight reset</span><span>23:59</span></div>
+        </div>
+
+        <div class="admin-section glass-card">
+          <div class="section-header"><h3>📦 Manage Products</h3><button class="btn-primary" onclick="app.openAddProduct()">+ Add Product</button></div>
+          <div class="table-responsive"><table class="admin-table" id="admin-products-table"></table></div>
+        </div>
+        <div class="admin-section glass-card">
+          <div class="section-header"><h3>🚀 Recent Orders</h3></div>
+          <div class="table-responsive"><table class="admin-table" id="admin-orders-table"></table></div>
+        </div>
+        <div class="admin-section glass-card">
+          <div class="section-header">
+            <h3>🧾 Bills &amp; Invoices</h3>
+            <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
+              <button class="btn-ghost btn-sm" onclick="app.downloadAllPDFs()">📄 Download All PDFs</button>
+              <button class="btn-ghost btn-sm" onclick="app.printAllBills()">🖨️ Print All</button>
+            </div>
+          </div>
+          <div class="table-responsive"><table class="admin-table" id="admin-bills-table"></table></div>
+        </div>
+
+        <!-- ===== CONTACT MANAGEMENT ===== -->
+        <div class="admin-section glass-card" id="admin-contact-section">
+          <div class="section-header">
+            <h3>📞 Store Contact &amp; Info</h3>
+            <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
+              <button class="btn-primary btn-sm" onclick="app.saveContact()">💾 Save &amp; Apply</button>
+              <button class="btn-ghost btn-sm" onclick="app.resetContact()">↺ Reset</button>
+            </div>
+          </div>
+
+          <!-- Contact Tabs -->
+          <div class="contact-tabs">
+            <button class="ctab-btn active" onclick="app.switchContactTab('basic',this)">🏪 Basic Info</button>
+            <button class="ctab-btn" onclick="app.switchContactTab('social',this)">🌐 Social &amp; Links</button>
+            <button class="ctab-btn" onclick="app.switchContactTab('business',this)">⚙️ Business Settings</button>
+          </div>
+
+          <!-- Tab: Basic Info -->
+          <div id="ctab-basic" class="ctab-content">
+            <div class="contact-form-grid">
+              <div class="form-group">
+                <label>🏪 Store Name</label>
+                <input type="text" id="ct-name" placeholder="FreshFruits" />
+              </div>
+              <div class="form-group">
+                <label>📞 Phone Number</label>
+                <input type="tel" id="ct-phone" placeholder="+91 98765 43210" />
+              </div>
+              <div class="form-group">
+                <label>💬 WhatsApp Number</label>
+                <input type="tel" id="ct-whatsapp" placeholder="+91 98765 43210" />
+              </div>
+              <div class="form-group">
+                <label>📧 Email Address</label>
+                <input type="email" id="ct-email" placeholder="hello@freshfruits.in" />
+              </div>
+              <div class="form-group">
+                <label>🕗 Working Hours</label>
+                <input type="text" id="ct-hours" placeholder="Mon–Sat: 7 AM – 8 PM" />
+              </div>
+              <div class="form-group">
+                <label>🚚 Delivery Radius</label>
+                <input type="text" id="ct-delivery" placeholder="Within 15 km" />
+              </div>
+              <div class="form-group" style="grid-column:1/-1">
+                <label>📍 Full Address</label>
+                <input type="text" id="ct-address" placeholder="Shop No. 12, MG Road, Bengaluru – 560001" />
+              </div>
+              <div class="form-group" style="grid-column:1/-1">
+                <label>💬 About / Tagline</label>
+                <textarea id="ct-about" rows="2" placeholder="Premium farm-fresh fruits delivered to your door." style="resize:vertical;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:var(--text);padding:0.75rem;border-radius:var(--radius-sm);width:100%;font-family:inherit;font-size:0.9rem"></textarea>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tab: Social & Links -->
+          <div id="ctab-social" class="ctab-content hidden">
+            <div class="contact-form-grid">
+              <div class="form-group">
+                <label>🌐 Website URL</label>
+                <input type="text" id="ct-website" placeholder="www.freshfruits.in" />
+              </div>
+              <div class="form-group">
+                <label>📸 Instagram</label>
+                <input type="text" id="ct-instagram" placeholder="@freshfruits.india" />
+              </div>
+              <div class="form-group">
+                <label>👍 Facebook</label>
+                <input type="text" id="ct-facebook" placeholder="facebook.com/freshfruits" />
+              </div>
+              <div class="form-group">
+                <label>🐦 Twitter / X</label>
+                <input type="text" id="ct-twitter" placeholder="@freshfruits" />
+              </div>
+              <div class="form-group">
+                <label>▶️ YouTube</label>
+                <input type="text" id="ct-youtube" placeholder="youtube.com/freshfruits" />
+              </div>
+              <div class="form-group">
+                <label>📌 Google Maps Link</label>
+                <input type="text" id="ct-maps" placeholder="maps.google.com/..." />
+              </div>
+            </div>
+          </div>
+
+          <!-- Tab: Business Settings -->
+          <div id="ctab-business" class="ctab-content hidden">
+            <div class="contact-form-grid">
+              <div class="form-group">
+                <label>🏦 UPI ID (For QR Payments)</label>
+                <input type="text" id="ct-upi" placeholder="merchant@upi" />
+              </div>
+              <div class="form-group">
+                <label>🏷️ GST Number</label>
+                <input type="text" id="ct-gst" placeholder="29ABCDE1234F1Z5" />
+              </div>
+              <div class="form-group">
+                <label>🏦 Bank Name</label>
+                <input type="text" id="ct-bank" placeholder="State Bank of India" />
+              </div>
+              <div class="form-group">
+                <label>💳 Account Number</label>
+                <input type="text" id="ct-account" placeholder="XXXX XXXX XXXX" />
+              </div>
+              <div class="form-group">
+                <label>🔀 IFSC Code</label>
+                <input type="text" id="ct-ifsc" placeholder="SBIN0001234" />
+              </div>
+              <div class="form-group">
+                <label>💰 Min Order (₹)</label>
+                <input type="number" id="ct-minorder" placeholder="199" />
+              </div>
+              <div class="form-group">
+                <label>🚀 Free Delivery Above (₹)</label>
+                <input type="number" id="ct-freedel" placeholder="499" />
+              </div>
+              <div class="form-group">
+                <label>🔖 Tax Rate (%)</label>
+                <input type="number" id="ct-tax" placeholder="5" min="0" max="100" />
+              </div>
+              <div class="form-group">
+                <label>🌍 Currency Symbol</label>
+                <input type="text" id="ct-currency" placeholder="₹" maxlength="3" />
+              </div>
+            </div>
+          </div>
+
+          <!-- Live Preview -->
+          <div id="contact-preview" class="contact-preview">
+            <h4>📋 Live Preview</h4>
+            <div id="contact-preview-content"><p style="color:var(--text-muted);font-size:0.85rem">Fill in the fields above and click Save &amp; Apply to see a preview.</p></div>
+          </div>
+        </div>
+
+        <!-- ===== CUSTOMER MANAGEMENT ===== -->
+        <div class="admin-section glass-card">
+          <div class="section-header">
+            <h3>👥 Customer Management</h3>
+            <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
+              <input type="text" id="customer-search" placeholder="🔍 Search customers..." 
+                style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:var(--text);padding:0.45rem 0.9rem;border-radius:var(--radius-sm);font-size:0.85rem;outline:none"
+                oninput="app.filterCustomers(this.value)" />
+              <button class="btn-ghost btn-sm" onclick="app.exportCustomersPDF()">📄 Export PDF</button>
+            </div>
+          </div>
+          <div class="customer-stats-row" id="customer-stats-row"></div>
+          <div class="table-responsive"><table class="admin-table" id="admin-customers-table"></table></div>
+        </div>
+
+        <!-- Edit Customer Modal (inline) -->
+        <div id="edit-customer-modal" class="admin-section glass-card hidden">
+          <div class="section-header">
+            <h3>✏️ Edit Customer</h3>
+            <button class="btn-ghost btn-sm" onclick="app.closeEditCustomer()">✕ Close</button>
+          </div>
+          <div class="contact-form-grid">
+            <input type="hidden" id="ec-id" />
+            <div class="form-group"><label>Full Name</label><input type="text" id="ec-name" /></div>
+            <div class="form-group"><label>Email</label><input type="email" id="ec-email" /></div>
+            <div class="form-group"><label>Phone</label><input type="tel" id="ec-phone" /></div>
+            <div class="form-group"><label>Role</label>
+              <select id="ec-role" style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:var(--text);padding:0.65rem 0.9rem;border-radius:var(--radius-sm);width:100%;font-size:0.9rem">
+                <option value="user">Customer</option>
+                <option value="admin">Admin</option>
+              </select>
+            </div>
+            <div class="form-group" style="grid-column:1/-1"><label>Address</label><input type="text" id="ec-address" /></div>
+          </div>
+          <div style="display:flex;gap:0.75rem;margin-top:0.5rem">
+            <button class="btn-primary" onclick="app.saveEditCustomer()">💾 Save Changes</button>
+            <button class="btn-danger btn-sm" onclick="app.deleteCustomer(document.getElementById('ec-id').value)">🗑️ Delete Customer</button>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+
+  </main>
+
+  <!-- ===== FOOTER ===== -->
+  <footer>
+    <div class="container">
+      <div class="footer-content">
+        <div class="footer-brand">
+          <div class="logo" style="font-size:1.4rem;margin-bottom:1rem">🍎 Fresh<span class="accent">Fruits</span></div>
+          <p>Premium farm-fresh fruits delivered to your door. 100% organic. 100% delicious.</p>
+          <div class="social-icons">
+            <span title="Instagram">📷</span>
+            <span title="Twitter">🐦</span>
+            <span title="WhatsApp">💬</span>
+            <span title="YouTube">▶️</span>
+          </div>
+        </div>
+        <div class="footer-col">
+          <h4>Quick Links</h4>
+          <a href="#" onclick="app.showView('home')">Home</a>
+          <a href="#" onclick="app.showView('products')">Shop</a>
+          <a href="#" onclick="app.showView('subscriptions')">Subscribe</a>
+          <a href="#" onclick="app.showView('about')">About Us</a>
+        </div>
+        <div class="footer-col">
+          <h4>Contact</h4>
+          <p>📞 +91 98765 43210</p>
+          <p>📧 hello@freshfruits.in</p>
+          <p>📍 Bengaluru, India</p>
+          <p>🕗 Mon–Sat: 7 AM – 8 PM</p>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>© 2025 FreshFruits. Made with ❤️ for fresh food lovers. All rights reserved.</p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ===== MODALS ===== -->
+  <!-- Auth Modal -->
+
+  <!-- Product Detail Modal -->
+  <div id="product-modal" class="modal-overlay hidden">
+    <div class="modal modal-large">
+      <button class="modal-close" onclick="app.closeProductModal()">✕</button>
+      <div id="product-modal-content"></div>
+    </div>
+  </div>
+
+  <!-- Payment Modal (Selection) -->
+  <div id="payment-modal" class="modal-overlay hidden">
+    <div class="modal">
+      <button class="modal-close" onclick="app.closePaymentModal()">✕</button>
+      <h2>💳 Choose Payment</h2>
+      <p class="modal-sub" id="payment-amount"></p>
+      <div class="payment-options">
+        <button class="payment-btn razorpay-btn" onclick="app.processPayment('razorpay')" style="background: linear-gradient(135deg, #02042b, #2b3990); color: white; border: none;">⚡ Pay via Razorpay</button>
+        <div class="divider">— or —</div>
+        <button class="payment-btn upi-gpay" onclick="app.showQRModal('GPay')">🟢 Google Pay (UPI)</button>
+        <button class="payment-btn upi-phonepe" onclick="app.showQRModal('PhonePe')">🟣 PhonePe</button>
+        <button class="payment-btn upi-paytm" onclick="app.showQRModal('Paytm')">🔵 Paytm</button>
+        <div class="divider">— or —</div>
+        <button class="payment-btn cod" onclick="app.processPayment('COD')">💵 Cash on Delivery</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- QR / Bank Transfer Modal -->
+  <div id="qr-modal" class="modal-overlay hidden">
+    <div class="modal" style="max-width:380px;text-align:center">
+      <button class="modal-close" onclick="app.closeQRModal()">✕</button>
+      <h2>Scan to Pay</h2>
+      <p class="modal-sub" id="qr-payment-amount" style="font-weight:700;color:var(--primary);font-size:1.2rem;margin-bottom:1rem"></p>
+      
+      <div class="qr-box" style="background:white;padding:1rem;border-radius:var(--radius-sm);display:inline-block;margin-bottom:1.5rem">
+        <img id="qr-img" src="" alt="UPI QR Code" style="width:200px;height:200px" />
+      </div>
+
+      <div style="text-align:left;background:rgba(255,255,255,0.05);padding:1rem;border-radius:var(--radius-sm);font-size:0.85rem;margin-bottom:1.5rem;border:1px solid rgba(255,255,255,0.1)">
+        <h4 style="color:var(--secondary);margin-bottom:0.5rem;font-size:0.85rem;text-transform:uppercase;letter-spacing:1px">Or Pay via Bank Transfer</h4>
+        <div style="display:flex;justify-content:space-between;margin-bottom:0.25rem"><span style="color:var(--text-muted)">Bank:</span> <strong id="qr-bank-name"></strong></div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:0.25rem"><span style="color:var(--text-muted)">A/C No:</span> <strong id="qr-bank-ac"></strong></div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:0.25rem"><span style="color:var(--text-muted)">IFSC:</span> <strong id="qr-bank-ifsc"></strong></div>
+        <div style="display:flex;justify-content:space-between"><span style="color:var(--text-muted)">UPI ID:</span> <strong id="qr-bank-upi"></strong></div>
+      </div>
+
+      <button class="btn-primary btn-block btn-lg" onclick="app.confirmQRPayment()">✅ I have made the payment</button>
+    </div>
+  </div>
+
+  <!-- Add Product Modal (Admin) — Full Image Management -->
+  <div id="add-product-modal" class="modal-overlay hidden" onclick="if(event.target===this)app.closeAddProduct()">
+    <div class="modal modal-wide" style="max-width:720px;max-height:92vh;overflow-y:auto">
+      <button class="modal-close" onclick="app.closeAddProduct()">✕</button>
+      <h2 id="ap-modal-title">➕ Add New Product</h2>
+
+      <!-- Basic Info -->
+      <div class="form-row">
+        <div class="form-group" style="flex:2"><label>Fruit Name *</label><input type="text" id="ap-name" placeholder="e.g. Alphonso Mango" /></div>
+        <div class="form-group" style="flex:1"><label>Emoji</label><input type="text" id="ap-emoji" placeholder="🥭" /></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Price (₹/kg) *</label><input type="number" id="ap-price" placeholder="149" min="0" /></div>
+        <div class="form-group"><label>Stock (kg) *</label><input type="number" id="ap-stock" placeholder="50" min="0" /></div>
+        <div class="form-group"><label>Category *</label>
+          <select id="ap-cat">
+            <option value="tropical">🌴 Tropical</option>
+            <option value="berries">🍓 Berries</option>
+            <option value="seasonal">🍂 Seasonal</option>
+            <option value="citrus">🍋 Citrus</option>
+            <option value="exotic">✨ Exotic</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group"><label>Description *</label><textarea id="ap-desc" rows="2" placeholder="Fresh, handpicked description..." style="width:100%;border-radius:8px;padding:10px;border:1px solid var(--border);background:var(--card);color:var(--text);resize:vertical"></textarea></div>
+      <label class="checkbox-label" style="margin-bottom:1rem;display:flex;align-items:center;gap:0.5rem"><input type="checkbox" id="ap-organic" /> Organic Certified 🌿</label>
+
+      <!-- ──────── Image Upload Zone ──────── -->
+      <div style="margin-bottom:1rem">
+        <label style="font-weight:700;display:block;margin-bottom:0.5rem">📸 Product Images <small style="font-weight:400;color:var(--text-muted)">(max 10 · JPG/PNG/WebP · 5 MB each)</small></label>
+
+        <!-- Drop Zone -->
+        <div id="ap-drop-zone" 
+             style="border:2px dashed var(--primary);border-radius:14px;padding:2rem;text-align:center;cursor:pointer;transition:all 0.3s;background:var(--card);position:relative"
+             onclick="document.getElementById('ap-file-input').click()"
+             ondragover="event.preventDefault();this.style.background='rgba(0,120,60,0.08)';this.style.borderStyle='solid'"
+             ondragleave="this.style.background='var(--card)';this.style.borderStyle='dashed'"
+             ondrop="app.handleImageDrop(event)">
+          <div id="ap-drop-icon" style="font-size:2.5rem;margin-bottom:0.5rem">📁</div>
+          <p style="margin:0;color:var(--text-muted);font-size:0.95rem">Drag & drop images here or <b style="color:var(--primary)">click to browse</b></p>
+          <p style="margin:0.3rem 0 0;color:var(--text-muted);font-size:0.8rem">Accepts JPG, JPEG, PNG, WebP</p>
+          <input type="file" id="ap-file-input" multiple accept="image/jpeg,image/png,image/webp" style="display:none" onchange="app.handleImageFileSelect(event)" />
+        </div>
+
+        <!-- Image Preview Grid -->
+        <div id="ap-image-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:0.75rem;margin-top:1rem"></div>
+
+        <p id="ap-image-count" style="font-size:0.82rem;color:var(--text-muted);margin-top:0.5rem">No images selected</p>
+      </div>
+
+      <!-- Action Buttons -->
+      <div style="display:flex;gap:0.75rem;margin-top:0.5rem">
+        <button id="ap-save-btn" class="btn-primary btn-block" style="flex:2" onclick="app.saveProduct()">💾 Save Product</button>
+        <button class="btn-ghost btn-block" style="flex:1" onclick="app.closeAddProduct()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="api.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

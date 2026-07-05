@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login - S-M Fruits</title>
+  <link rel="stylesheet" href="login.css">
+</head>
+<body>
+  
+  <!-- Left Hero Section -->
+  <div class="hero-section">
+    <div class="hero-bg-fallback"></div>
+    <div class="hero-bg"></div>
+    <div class="hero-overlay"></div>
+    
+    <!-- Animated Particles -->
+    <div class="particles" id="particles"></div>
+
+    <div class="hero-content">
+      <div class="logo-container">
+        <div class="logo-icon">🍎</div>
+        <div class="logo-text">S-M Fruits</div>
+      </div>
+      <h1 class="hero-title">Freshness Delivered to Your Door.</h1>
+      <p class="hero-desc">Experience the finest selection of hand-picked, organic fruits. Sign in to track your orders, claim exclusive discounts, and enjoy a healthier lifestyle with S-M Fruits.</p>
+    </div>
+  </div>
+
+  <!-- Right Form Section -->
+  <div class="form-section">
+    <div class="glass-card">
+      <div class="form-header">
+        <h2 id="form-title">Welcome Back 👋</h2>
+        <p id="form-subtitle">Sign in to your FreshFruits account</p>
+      </div>
+
+      <!-- General Error Message -->
+      <div id="general-error" style="color: var(--error); background: rgba(244, 67, 54, 0.1); border: 1px solid rgba(244, 67, 54, 0.3); border-radius: 8px; padding: 10px; margin-bottom: 20px; text-align: center; display: none;"></div>
+
+      <!-- Dynamic Form Container -->
+      <div id="form-container">
+        <!-- Fields injected by login.js based on mode (login or signup) -->
+      </div>
+
+      <!-- Submit Button -->
+      <button class="btn-primary" id="submit-btn" onclick="auth.submit()">
+        <span id="btn-text">Login</span>
+        <div class="spinner" id="btn-spinner"></div>
+      </button>
+
+      <div class="divider">OR</div>
+
+      <!-- Social Login -->
+      <button class="social-btn" onclick="window.location.href='http://localhost:5000/api/auth/google'">
+        <img src="https://www.google.com/favicon.ico" alt="Google"> Continue with Google
+      </button>
+      <button class="social-btn apple" onclick="auth.toast('Apple login coming soon!', 'info')">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/f/fa/Apple_logo_black.svg" style="filter: invert(1);" alt="Apple"> Continue with Apple
+      </button>
+
+      <!-- Toggle Mode -->
+      <div class="signup-row">
+        <span id="toggle-text">No account?</span> 
+        <a href="#" class="signup-link" id="toggle-link" onclick="auth.toggleMode()">Sign Up</a>
+      </div>
+    </div>
+  </div>
+
+  <script src="login.js"></script>
+</body>
+</html>
